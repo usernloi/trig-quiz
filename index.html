@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOH-CAH-TOA Trainer</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap');
+
+  :root {
+    --blueprint: #1B3A5C;
+    --blueprint-dark: #12283F;
+    --grid-line: rgba(255,255,255,0.07);
+    --grid-line-strong: rgba(255,255,255,0.14);
+    --paper: #EAF2F8;
+    --ink: #F4F9FC;
+    --ink-dim: #9FB9CC;
+    --amber: #FF9F45;
+    --amber-dim: rgba(255,159,69,0.15);
+    --ok: #6FD08C;
+    --bad: #FF6B6B;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Inter', sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    background:
+      linear-gradient(var(--grid-line) 1px, transparent 1px) 0 0 / 28px 28px,
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px) 0 0 / 28px 28px,
+      linear-gradient(var(--grid-line-strong) 1px, transparent 1px) 0 0 / 140px 140px,
+      linear-gradient(90deg, var(--grid-line-strong) 1px, transparent 1px) 0 0 / 140px 140px,
+      var(--blueprint);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .sheet {
+    width: 100%;
+    max-width: 620px;
+    background: rgba(18, 40, 63, 0.55);
+    border: 1px solid var(--grid-line-strong);
+    border-radius: 4px;
+    backdrop-filter: blur(2px);
+    overflow: hidden;
+  }
+
+  .titleblock {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--grid-line-strong);
+  }
+
+  .titleblock h1 {
+    font-family: var(--mono);
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    margin: 0;
+    text-transform: uppercase;
+  }
+
+  .titleblock .sub {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-dim);
+    letter-spacing: 0.08em;
+  }
+
+  .score-tag {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--amber);
+    border: 1px solid var(--amber-dim);
+    background: var(--amber-dim);
+    padding: 4px 10px;
+    border-radius: 3px;
+    white-space: nowrap;
+  }
+
+  .body-area {
+    padding: 28px 24px 24px;
+  }
+
+  /* ---- Setup screen ---- */
+  .setup h2 {
+    font-family: var(--mono);
+    font-size: 14px;
+    letter-spacing: 0.06em;
+    color: var(--ink-dim);
+    text-transform: uppercase;
+    margin: 0 0 14px;
+  }
+
+  .diff-options {
+    display: grid;
+    gap: 10px;
+    margin-bottom: 22px;
+  }
+
+  .diff-btn {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    text-align: left;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--grid-line-strong);
+    color: var(--ink);
+    padding: 14px 16px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: var(--sans);
+    transition: border-color .15s ease, background .15s ease;
+  }
+  .diff-btn:hover { border-color: var(--amber); background: rgba(255,159,69,0.06); }
+  .diff-btn.selected { border-color: var(--amber); background: var(--amber-dim); }
+
+  .diff-btn .name { font-weight: 600; font-size: 15px; }
+  .diff-btn .desc { font-size: 12px; color: var(--ink-dim); margin-top: 2px; }
+  .diff-btn .tag {
+    font-family: var(--mono); font-size: 11px; color: var(--amber);
+    border: 1px solid var(--amber-dim); padding: 2px 8px; border-radius: 20px;
+  }
+
+  .start-btn {
+    width: 100%;
+    background: var(--amber);
+    color: var(--blueprint-dark);
+    border: none;
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 14px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: filter .15s ease;
+  }
+  .start-btn:hover { filter: brightness(1.08); }
+  .start-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ---- Quiz screen ---- */
+  .progress-row {
+    display: flex; justify-content: space-between; align-items: center;
+    font-family: var(--mono); font-size: 11px; color: var(--ink-dim);
+    letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 14px;
+  }
+
+  .progress-track { flex: 1; height: 3px; background: var(--grid-line-strong); margin: 0 14px; border-radius: 2px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--amber); transition: width .3s ease; }
+
+  .diagram-wrap {
+    display: flex; justify-content: center; align-items: center;
+    margin: 6px 0 18px;
+    background: rgba(255,255,255,0.02);
+    border: 1px dashed var(--grid-line-strong);
+    border-radius: 4px;
+    padding: 10px;
+  }
+
+  .question-text {
+    font-size: 16px;
+    line-height: 1.55;
+    margin-bottom: 6px;
+  }
+  .question-text .known { color: var(--amber); font-family: var(--mono); font-weight: 700; }
+
+  .hint {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-dim);
+    margin-bottom: 4px;
+  }
+
+  .hint-btn {
+    background: transparent;
+    border: 1px solid var(--grid-line-strong);
+    color: var(--ink-dim);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 6px 12px;
+    border-radius: 3px;
+    cursor: pointer;
+    margin-bottom: 18px;
+    transition: border-color .15s ease, color .15s ease;
+  }
+  .hint-btn:hover { border-color: var(--amber); color: var(--amber); }
+
+  .hint-box {
+    display: none;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--amber);
+    background: var(--amber-dim);
+    border: 1px solid var(--amber-dim);
+    padding: 8px 12px;
+    border-radius: 3px;
+    margin-bottom: 18px;
+  }
+  .hint-box.show { display: block; }
+
+  .answer-row {
+    display: flex; gap: 10px; margin-bottom: 12px;
+  }
+
+  .answer-row input {
+    flex: 1;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--grid-line-strong);
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 16px;
+    padding: 12px 14px;
+    border-radius: 3px;
+    outline: none;
+  }
+  .answer-row input:focus { border-color: var(--amber); }
+
+  .submit-btn {
+    background: var(--amber);
+    color: var(--blueprint-dark);
+    border: none;
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0 20px;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  .submit-btn:hover { filter: brightness(1.08); }
+
+  .feedback {
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 10px 12px;
+    border-radius: 3px;
+    margin-bottom: 14px;
+    display: none;
+  }
+  .feedback.show { display: block; }
+  .feedback.correct { background: rgba(111,208,140,0.12); border: 1px solid rgba(111,208,140,0.4); color: var(--ok); }
+  .feedback.wrong { background: rgba(255,107,107,0.12); border: 1px solid rgba(255,107,107,0.4); color: var(--bad); }
+
+  .next-btn {
+    width: 100%;
+    background: transparent;
+    border: 1px solid var(--amber);
+    color: var(--amber);
+    font-family: var(--mono);
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 12px;
+    border-radius: 3px;
+    cursor: pointer;
+    display: none;
+  }
+  .next-btn.show { display: block; }
+  .next-btn:hover { background: var(--amber-dim); }
+
+  /* ---- Results screen ---- */
+  .results { text-align: center; }
+  .results .big-score {
+    font-family: var(--mono);
+    font-size: 52px;
+    font-weight: 700;
+    color: var(--amber);
+    margin: 6px 0 2px;
+  }
+  .results .pct { color: var(--ink-dim); font-family: var(--mono); font-size: 13px; margin-bottom: 18px; }
+  .results .msg { font-size: 15px; margin-bottom: 24px; line-height: 1.5; }
+
+  .hidden { display: none; }
+
+  @media (max-width: 480px) {
+    .titleblock { flex-direction: column; align-items: flex-start; gap: 8px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="sheet">
+  <div class="titleblock">
+    <div>
+      <h1>SOH · CAH · TOA</h1>
+      <div class="sub">RIGHT TRIANGLE TRAINER</div>
+    </div>
+    <div class="score-tag" id="scoreTag">0 / 0</div>
+  </div>
+
+  <div class="body-area">
+
+    <!-- SETUP -->
+    <div class="setup" id="setupScreen">
+      <h2>Select difficulty</h2>
+      <div class="diff-options">
+        <button class="diff-btn" data-level="easy">
+          <div>
+            <div class="name">Easy</div>
+            <div class="desc">Whole numbers · find a missing side</div>
+          </div>
+          <div class="tag">SIDES</div>
+        </button>
+        <button class="diff-btn" data-level="medium">
+          <div>
+            <div class="name">Medium</div>
+            <div class="desc">Whole numbers · find a missing angle</div>
+          </div>
+          <div class="tag">ANGLES</div>
+        </button>
+        <button class="diff-btn" data-level="hard">
+          <div>
+            <div class="name">Hard</div>
+            <div class="desc">Decimals · mixed sides and angles</div>
+          </div>
+          <div class="tag">MIXED</div>
+        </button>
+      </div>
+      <button class="start-btn" id="startBtn" disabled>Start 5-question round</button>
+    </div>
+
+    <!-- QUIZ -->
+    <div class="hidden" id="quizScreen">
+      <div class="progress-row">
+        <span id="qCounter">Q1 / 5</span>
+        <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:20%"></div></div>
+        <span id="levelTag">EASY</span>
+      </div>
+
+      <div class="diagram-wrap">
+        <svg id="triSvg" width="260" height="190" viewBox="0 0 260 190"></svg>
+      </div>
+
+      <div class="question-text" id="questionText"></div>
+      <button class="hint-btn" id="hintBtn">Show hint</button>
+      <div class="hint-box" id="hintBox"></div>
+
+      <div class="answer-row">
+        <input type="text" inputmode="decimal" id="answerInput" placeholder="Your answer" autocomplete="off">
+        <button class="submit-btn" id="submitBtn">Check</button>
+      </div>
+
+      <div class="feedback" id="feedback"></div>
+      <button class="next-btn" id="nextBtn">Next question →</button>
+    </div>
+
+    <!-- RESULTS -->
+    <div class="hidden results" id="resultsScreen">
+      <h2 style="font-family:var(--mono); font-size:13px; letter-spacing:0.08em; color:var(--ink-dim); text-transform:uppercase; margin-bottom:4px;">Round complete</h2>
+      <div class="big-score" id="finalScore">0/5</div>
+      <div class="pct" id="finalPct">0%</div>
+      <div class="msg" id="finalMsg"></div>
+      <button class="start-btn" id="retryBtn">Try another round</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function() {
+  let state = {
+    level: null,
+    qIndex: 0,
+    total: 5,
+    score: 0,
+    sessionScore: 0,
+    sessionTotal: 0,
+    current: null
+  };
+
+  const setupScreen = document.getElementById('setupScreen');
+  const quizScreen = document.getElementById('quizScreen');
+  const resultsScreen = document.getElementById('resultsScreen');
+  const startBtn = document.getElementById('startBtn');
+  const scoreTag = document.getElementById('scoreTag');
+
+  document.querySelectorAll('.diff-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      state.level = btn.dataset.level;
+      startBtn.disabled = false;
+    });
+  });
+
+  startBtn.addEventListener('click', () => {
+    state.qIndex = 0;
+    state.score = 0;
+    setupScreen.classList.add('hidden');
+    quizScreen.classList.remove('hidden');
+    document.getElementById('levelTag').textContent = state.level.toUpperCase();
+    nextQuestion();
+  });
+
+  document.getElementById('retryBtn').addEventListener('click', () => {
+    resultsScreen.classList.add('hidden');
+    setupScreen.classList.remove('hidden');
+    document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('selected'));
+    startBtn.disabled = true;
+    state.level = null;
+  });
+
+  function randInt(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; }
+  function randDec(a, b) { return Math.round((Math.random() * (b - a) + a) * 10) / 10; }
+  function toDeg(rad) { return rad * (180 / Math.PI); }
+  function round1(n) { return Math.round(n * 10) / 10; }
+
+  function generateTriangle() {
+    let opp, adj;
+    if (state.level === 'hard') {
+      opp = randDec(2, 20);
+      adj = randDec(2, 20);
+    } else {
+      opp = randInt(3, 15);
+      adj = randInt(3, 15);
+    }
+    const hyp = Math.round(Math.sqrt(opp * opp + adj * adj) * 100) / 100;
+    return { opp, adj, hyp };
+  }
+
+  function drawTriangle(adjVal, oppVal, angleDeg, opts) {
+    const { showAngle, showAdjLabel, showOppLabel, showHypLabel, mirror, unknownMark } = opts;
+    const svg = document.getElementById('triSvg');
+    const W = 260, H = 190;
+    const padX = 40, padY = 30;
+    const boxW = W - padX * 2;
+    const boxH = H - padY * 2;
+
+    // uniform scale so the drawn triangle's angle always matches the real angle
+    const scale = Math.min(boxW / adjVal, boxH / oppVal);
+    const drawAdj = adjVal * scale;
+    const drawOpp = oppVal * scale;
+
+    let x0 = padX, y0 = H - padY;                     // angle vertex
+    let x1 = padX + drawAdj, y1 = H - padY;            // right-angle vertex
+    let x2 = padX + drawAdj, y2 = H - padY - drawOpp;  // top vertex
+
+    if (mirror) {
+      const cx = padX + boxW / 2;
+      x0 = 2 * cx - x0;
+      x1 = 2 * cx - x1;
+      x2 = 2 * cx - x2;
+    }
+    const dir = mirror ? -1 : 1;
+    const stroke = "#F4F9FC";
+    const amber = "#FF9F45";
+
+    let svgContent = `
+      <polygon points="${x0},${y0} ${x1},${y1} ${x2},${y2}"
+        fill="rgba(255,255,255,0.04)" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/>
+    `;
+
+    const sq = 9;
+    svgContent += `<path d="M ${x1 - dir*sq} ${y1} L ${x1 - dir*sq} ${y1-sq} L ${x1} ${y1-sq}" fill="none" stroke="${stroke}" stroke-width="1.25"/>`;
+
+    if (showAngle) {
+      const r = Math.max(16, Math.min(26, drawAdj * 0.3, drawOpp * 0.3));
+      const rad = angleDeg * Math.PI / 180;
+      const ax = x0 + dir * r * Math.cos(rad);
+      const ay = y0 - r * Math.sin(rad);
+      svgContent += `<path d="M ${x0 + dir*r} ${y0} A ${r} ${r} 0 0 ${mirror?1:0} ${ax} ${ay}" fill="none" stroke="${amber}" stroke-width="2"/>`;
+      const bisRad = (angleDeg/2) * Math.PI / 180;
+      const lx = x0 + dir * (r+16) * Math.cos(bisRad);
+      const ly = y0 - (r+12) * Math.sin(bisRad);
+      svgContent += `<text x="${lx}" y="${ly}" fill="${amber}" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700" text-anchor="middle">${round1(angleDeg)}°</text>`;
+    } else if (unknownMark === 'angle') {
+      const r = 22;
+      const bisRad = (angleDeg/2) * Math.PI / 180;
+      const lx = x0 + dir * (r+22) * Math.cos(bisRad);
+      const ly = y0 - (r+18) * Math.sin(bisRad);
+      svgContent += `<text x="${lx}" y="${ly}" fill="${stroke}" font-family="JetBrains Mono, monospace" font-size="13" font-weight="700" text-anchor="middle">?</text>`;
+    }
+
+    const midAdjX = (x0+x1)/2, midAdjY = y0 + 18;
+    const midOppX = x1 + dir*18, midOppY = (y1+y2)/2;
+    const midHypX = (x0+x2)/2 - dir*16, midHypY = (y0+y2)/2 - 4;
+    const hypVal = Math.round(Math.sqrt(adjVal*adjVal+oppVal*oppVal)*100)/100;
+
+    if (showAdjLabel) svgContent += `<text x="${midAdjX}" y="${midAdjY}" fill="${stroke}" font-family="JetBrains Mono, monospace" font-size="13" text-anchor="middle">${adjVal}</text>`;
+    else if (unknownMark === 'adj') svgContent += `<text x="${midAdjX}" y="${midAdjY}" fill="${stroke}" font-family="JetBrains Mono, monospace" font-size="13" text-anchor="middle">?</text>`;
+
+    if (showOppLabel) svgContent += `<text x="${midOppX}" y="${midOppY}" fill="${stroke}" font-family="JetBrains Mono, monospace" font-size="13" text-anchor="middle">${oppVal}</text>`;
+    else if (unknownMark === 'opp') svgContent += `<text x="${midOppX}" y="${midOppY}" fill="${stroke}" font-family="JetBrains Mono, monospace" font-size="13" text-anchor="middle">?</text>`;
+
+    if (showHypLabel) svgContent += `<text x="${midHypX}" y="${midHypY}" fill="${stroke}" font-family="JetBrains Mono, monospace" font-size="13" text-anchor="middle">${hypVal}</text>`;
+    else if (unknownMark === 'hyp') svgContent += `<text x="${midHypX}" y="${midHypY}" fill="${stroke}" font-family="JetBrains Mono, monospace" font-size="13" text-anchor="middle">?</text>`;
+
+    svg.innerHTML = svgContent;
+  }
+
+  function nextQuestion() {
+    document.getElementById('feedback').classList.remove('show', 'correct', 'wrong');
+    document.getElementById('nextBtn').classList.remove('show');
+    document.getElementById('answerInput').value = '';
+    document.getElementById('answerInput').disabled = false;
+    document.getElementById('submitBtn').disabled = false;
+    document.getElementById('hintBox').classList.remove('show');
+    document.getElementById('hintBtn').textContent = 'Show hint';
+    document.getElementById('hintBtn').style.display = 'inline-block';
+
+    if (state.qIndex >= state.total) {
+      showResults();
+      return;
+    }
+
+    state.qIndex++;
+    document.getElementById('qCounter').textContent = `Q${state.qIndex} / ${state.total}`;
+    document.getElementById('progressFill').style.width = `${(state.qIndex / state.total) * 100}%`;
+
+    const { opp, adj, hyp } = generateTriangle();
+    const angleDeg = toDeg(Math.atan(opp / adj));
+    const mirror = Math.random() < 0.5;
+
+    let mode;
+    if (state.level === 'easy') {
+      mode = 'side';
+    } else {
+      mode = Math.random() < 0.5 ? 'side' : 'angle';
+    }
+
+    let questionText, hintText, correct, isAngle = false;
+    let drawOpts = { showAngle: false, showAdjLabel: false, showOppLabel: false, showHypLabel: false, mirror, unknownMark: null };
+
+    if (mode === 'side') {
+      const target = ['opposite', 'adjacent', 'hypotenuse'][randInt(0, 2)];
+      drawOpts.showAngle = true;
+      if (target === 'opposite') {
+        questionText = `Angle is <span class="known">${round1(angleDeg)}°</span>, adjacent side is <span class="known">${adj}</span>. Find the <b>opposite</b> side.`;
+        hintText = 'tan(angle) = opposite / adjacent';
+        correct = opp;
+        drawOpts.showAdjLabel = true;
+        drawOpts.unknownMark = 'opp';
+      } else if (target === 'adjacent') {
+        questionText = `Angle is <span class="known">${round1(angleDeg)}°</span>, opposite side is <span class="known">${opp}</span>. Find the <b>adjacent</b> side.`;
+        hintText = 'tan(angle) = opposite / adjacent';
+        correct = adj;
+        drawOpts.showOppLabel = true;
+        drawOpts.unknownMark = 'adj';
+      } else {
+        questionText = `Angle is <span class="known">${round1(angleDeg)}°</span>, opposite side is <span class="known">${opp}</span>. Find the <b>hypotenuse</b>.`;
+        hintText = 'sin(angle) = opposite / hypotenuse';
+        correct = hyp;
+        drawOpts.showOppLabel = true;
+        drawOpts.unknownMark = 'hyp';
+      }
+    } else {
+      isAngle = true;
+      drawOpts.showAngle = false;
+      drawOpts.unknownMark = 'angle';
+      const ratioChoice = ['sin', 'cos', 'tan'][randInt(0, 2)];
+      if (ratioChoice === 'sin') {
+        questionText = `Opposite = <span class="known">${opp}</span>, Hypotenuse = <span class="known">${hyp}</span>. Find the angle.`;
+        hintText = 'sin(angle) = opposite / hypotenuse';
+        correct = round1(toDeg(Math.asin(opp / hyp)));
+        drawOpts.showOppLabel = true;
+        drawOpts.showHypLabel = true;
+      } else if (ratioChoice === 'cos') {
+        questionText = `Adjacent = <span class="known">${adj}</span>, Hypotenuse = <span class="known">${hyp}</span>. Find the angle.`;
+        hintText = 'cos(angle) = adjacent / hypotenuse';
+        correct = round1(toDeg(Math.acos(adj / hyp)));
+        drawOpts.showAdjLabel = true;
+        drawOpts.showHypLabel = true;
+      } else {
+        questionText = `Opposite = <span class="known">${opp}</span>, Adjacent = <span class="known">${adj}</span>. Find the angle.`;
+        hintText = 'tan(angle) = opposite / adjacent';
+        correct = round1(toDeg(Math.atan(opp / adj)));
+        drawOpts.showOppLabel = true;
+        drawOpts.showAdjLabel = true;
+      }
+    }
+
+    document.getElementById('questionText').innerHTML = questionText;
+    document.getElementById('hintBox').textContent = `Hint: ${hintText}`;
+    drawTriangle(adj, opp, angleDeg, drawOpts);
+
+    state.current = { correct, isAngle };
+    document.getElementById('answerInput').focus();
+  }
+
+  function submitAnswer() {
+    const input = document.getElementById('answerInput');
+    const val = parseFloat(input.value);
+    const feedback = document.getElementById('feedback');
+    const { correct, isAngle } = state.current;
+    const unit = isAngle ? '°' : '';
+
+    if (isNaN(val)) {
+      feedback.textContent = `Enter a number. Correct answer: ${correct}${unit}`;
+      feedback.className = 'feedback show wrong';
+    } else if (Math.abs(val - correct) <= 0.5) {
+      state.score++;
+      state.sessionScore++;
+      feedback.textContent = `Correct! (${correct}${unit})`;
+      feedback.className = 'feedback show correct';
+    } else {
+      feedback.textContent = `Not quite. Correct answer: ${correct}${unit}`;
+      feedback.className = 'feedback show wrong';
+    }
+
+    state.sessionTotal++;
+    scoreTag.textContent = `${state.sessionScore} / ${state.sessionTotal}`;
+
+    input.disabled = true;
+    document.getElementById('submitBtn').disabled = true;
+    document.getElementById('nextBtn').classList.add('show');
+  }
+
+  document.getElementById('submitBtn').addEventListener('click', submitAnswer);
+  document.getElementById('answerInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !document.getElementById('answerInput').disabled) submitAnswer();
+  });
+  document.getElementById('nextBtn').addEventListener('click', nextQuestion);
+  document.getElementById('hintBtn').addEventListener('click', () => {
+    document.getElementById('hintBox').classList.add('show');
+    document.getElementById('hintBtn').style.display = 'none';
+  });
+
+  function showResults() {
+    quizScreen.classList.add('hidden');
+    resultsScreen.classList.remove('hidden');
+    const pct = Math.round((state.score / state.total) * 100);
+    document.getElementById('finalScore').textContent = `${state.score}/${state.total}`;
+    document.getElementById('finalPct').textContent = `${pct}%`;
+    let msg;
+    if (pct >= 80) msg = "Great job — you're ready for dual precal!";
+    else if (pct >= 50) msg = "Solid start — a bit more practice and you'll have it down.";
+    else msg = "Keep practicing SOH-CAH-TOA — you'll get there.";
+    document.getElementById('finalMsg').textContent = msg;
+  }
+})();
+</script>
+
+</body>
+</html>
