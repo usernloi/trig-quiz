@@ -12,7 +12,7 @@ An interactive web app for practicing right-triangle trigonometry. Built to help
 
 ## How to use it
 
-Download `trig_quiz_web.html` and open it in any browser — no installation, no server, no dependencies. Pick a difficulty and start solving.
+Download `index.html` and open it in any browser — no installation, no server, no dependencies. Pick a difficulty and start solving.
 
 ## Built with
 
